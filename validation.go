@@ -16,7 +16,7 @@
 package quickfix
 
 import (
-	"github.com/quickfixgo/quickfix/datadictionary"
+	"github.com/orcabay/custom-quickfix/datadictionary"
 )
 
 const (
