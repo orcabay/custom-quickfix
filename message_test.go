@@ -34,6 +34,30 @@ func BenchmarkParseMessage(b *testing.B) {
 	}
 }
 
+func BenchmarkParseMessageW(b *testing.B) {
+	// Build a realistic 35=W message once, then benchmark the fast-path parse.
+	outMsg := NewMessage()
+	outMsg.Header.SetField(tagBeginString, FIXString("FIX.4.4"))
+	outMsg.Header.SetField(tagMsgType, FIXString("W"))
+	outMsg.Header.SetField(Tag(49), FIXString("EXCH"))
+	outMsg.Header.SetField(Tag(56), FIXString("CLIENT"))
+	outMsg.Header.SetField(Tag(34), FIXInt(1))
+	outMsg.Header.SetField(Tag(52), FIXString("20260410-10:00:00"))
+	outMsg.Body.SetField(Tag(55), FIXString("EURUSD"))
+	outMsg.Body.SetField(Tag(268), FIXInt(2))
+	outMsg.Body.SetField(Tag(269), FIXString("0"))
+	outMsg.Body.SetField(Tag(270), FIXString("1.08500"))
+	outMsg.Body.SetField(Tag(271), FIXString("1000000"))
+	raw := outMsg.String()
+
+	msg := NewMessage()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		buf := bytes.NewBufferString(raw)
+		_ = ParseMessage(msg, buf)
+	}
+}
+
 type MessageSuite struct {
 	QuickFIXSuite
 	msg *Message
@@ -85,6 +109,65 @@ func (s *MessageSuite) TestParseMessage() {
 	s.True(s.msg.IsMsgTypeOf("D"))
 
 	s.False(s.msg.IsMsgTypeOf("A"))
+}
+
+func (s *MessageSuite) TestRawBodyExposed() {
+	// Given a parsed non-W message (normal path)
+	rawMsg := bytes.NewBufferString("8=FIX.4.2\x019=104\x0135=D\x0134=2\x0149=TW\x0152=20140515-19:49:56.659\x0156=ISLD\x0111=100\x0121=1\x0140=1\x0154=1\x0155=TSLA\x0160=00010101-00:00:00.000\x0110=039\x01")
+	s.Nil(ParseMessage(s.msg, rawMsg))
+
+	// RawBody should return the body bytes already populated by doParsing
+	raw := s.msg.RawBody()
+	s.NotNil(raw, "RawBody should not be nil after parsing a message with body fields")
+	s.True(bytes.Contains(raw, []byte("55=TSLA")), "RawBody should contain tag 55, got: %s", string(raw))
+}
+
+func (s *MessageSuite) TestParseWFastPath() {
+	// Build a valid 35=W message using normal construction so body length
+	// and checksum are computed automatically.
+	outMsg := NewMessage()
+	outMsg.Header.SetField(tagBeginString, FIXString("FIX.4.4"))
+	outMsg.Header.SetField(tagMsgType, FIXString("W"))
+	outMsg.Header.SetField(Tag(49), FIXString("EXCH"))              // SenderCompID
+	outMsg.Header.SetField(Tag(56), FIXString("CLIENT"))            // TargetCompID
+	outMsg.Header.SetField(Tag(34), FIXInt(1))                      // MsgSeqNum
+	outMsg.Header.SetField(Tag(52), FIXString("20260410-10:00:00")) // SendingTime
+	outMsg.Body.SetField(Tag(55), FIXString("EURUSD"))              // Symbol
+	outMsg.Body.SetField(Tag(268), FIXInt(2))                       // NoMDEntries
+	outMsg.Body.SetField(Tag(269), FIXString("0"))                  // MDEntryType
+	outMsg.Body.SetField(Tag(270), FIXString("1.08500"))            // MDEntryPx
+	outMsg.Body.SetField(Tag(271), FIXString("1000000"))            // MDEntrySize
+
+	rawBytes := bytes.NewBufferString(outMsg.String())
+
+	inMsg := NewMessage()
+	s.Nil(ParseMessage(inMsg, rawBytes))
+
+	// Fast path: Body FieldMap must be empty — no Body.add() calls for 35=W.
+	s.False(inMsg.Body.Has(Tag(55)), "Body FieldMap should be empty for 35=W (fast path); tag 55 should not be present")
+	s.False(inMsg.Body.Has(Tag(268)), "Body FieldMap should be empty for 35=W (fast path); tag 268 should not be present")
+
+	// RawBody must contain the body fields as raw bytes.
+	rawBody := inMsg.RawBody()
+	s.NotNil(rawBody, "RawBody should not be nil for 35=W")
+	s.True(bytes.Contains(rawBody, []byte("55=EURUSD")), "RawBody should contain tag 55, got: %s", string(rawBody))
+	s.True(bytes.Contains(rawBody, []byte("268=2")), "RawBody should contain tag 268, got: %s", string(rawBody))
+
+	// Header FieldMap must still be fully populated.
+	msgType, err := inMsg.MsgType()
+	s.Nil(err)
+	s.Equal("W", msgType)
+	s.True(inMsg.Header.Has(Tag(49)), "Header should contain SenderCompID (49)")
+	s.True(inMsg.Header.Has(Tag(52)), "Header should contain SendingTime (52)")
+
+	// Tag 56 (TargetCompID) must also be in the header.
+	s.True(inMsg.Header.Has(Tag(56)), "Header should contain TargetCompID (56)")
+
+	// RawBody must NOT include the trailer — CheckSum tag 10 must not appear.
+	s.False(bytes.Contains(rawBody, []byte("10=")), "RawBody must not include the trailer CheckSum field")
+
+	// Trailer must still be populated.
+	s.True(inMsg.Trailer.Has(tagCheckSum), "Trailer should contain CheckSum (10)")
 }
 
 func (s *MessageSuite) TestParseMessageWithDataDictionary() {

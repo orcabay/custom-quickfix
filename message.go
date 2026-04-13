@@ -227,6 +227,85 @@ func doParsing(mp *msgParser) (err error) {
 	}
 	mp.msg.Header.add(mp.msg.fields[mp.fieldIndex : mp.fieldIndex+1])
 
+	// Fast path for 35=W (MarketDataSnapshotFullRefresh): skip Body.FieldMap population.
+	// extractField is still called per field for body-length validation.
+	// Header and Trailer FieldMaps are populated normally.
+	// Access body fields via msg.RawBody().
+	// Note: messages with XMLData (tag 213) bodies are not supported by this fast path.
+	if string(mp.parsedFieldBytes.value) == "W" {
+		{
+			raw := mp.rawBytes
+			//seq, sendingTime := []byte("?"), []byte("?")
+			if i := bytes.Index(raw, []byte("\x0134=")); i >= 0 {
+				end := i + 4
+				for end < len(raw) && raw[end] != '\x01' {
+					end++
+				}
+				//seq = raw[i+4 : end]
+			}
+			if i := bytes.Index(raw, []byte("\x0152=")); i >= 0 {
+				end := i + 4
+				for end < len(raw) && raw[end] != '\x01' {
+					end++
+				}
+				//sendingTime = raw[i+4 : end]
+			}
+		}
+		mp.fieldIndex++
+		mp.trailerBytes = []byte{}
+		mp.foundBody = false
+		mp.foundTrailer = false
+		for {
+			mp.parsedFieldBytes = &mp.msg.fields[mp.fieldIndex]
+			if mp.rawBytes, err = extractField(mp.parsedFieldBytes, mp.rawBytes); err != nil {
+				return
+			}
+			switch {
+			case isHeaderField(mp.parsedFieldBytes.tag, mp.transportDataDictionary):
+				mp.msg.Header.add(mp.msg.fields[mp.fieldIndex : mp.fieldIndex+1])
+			case isTrailerField(mp.parsedFieldBytes.tag, mp.transportDataDictionary):
+				mp.msg.Trailer.add(mp.msg.fields[mp.fieldIndex : mp.fieldIndex+1])
+				mp.foundTrailer = true
+			default:
+				// Body field: intentionally not added to Body.FieldMap.
+				// trailerBytes tracks the cursor after each body field so the trim below is correct.
+				mp.foundBody = true
+				mp.trailerBytes = mp.rawBytes
+			}
+			if mp.parsedFieldBytes.tag == tagCheckSum {
+				break
+			}
+			if !mp.foundBody {
+				mp.msg.bodyBytes = mp.rawBytes
+			}
+			mp.fieldIndex++
+		}
+		if mp.foundTrailer && !mp.foundBody {
+			mp.trailerBytes = mp.rawBytes
+			mp.msg.bodyBytes = nil
+		}
+		// Trim bodyBytes: subtract trailer length to get body-only slice.
+		if len(mp.msg.bodyBytes) > len(mp.trailerBytes) {
+			mp.msg.bodyBytes = mp.msg.bodyBytes[:len(mp.msg.bodyBytes)-len(mp.trailerBytes)]
+		}
+		// Validate body length using already-extracted field bytes (same as normal path).
+		length := 0
+		for _, field := range mp.msg.fields {
+			switch field.tag {
+			case tagBeginString, tagBodyLength, tagCheckSum:
+			default:
+				length += field.length()
+			}
+		}
+		bodyLength, blerr := mp.msg.Header.getIntNoLock(tagBodyLength)
+		if blerr != nil {
+			err = parseError{OrigError: blerr.Error()}
+		} else if length != bodyLength {
+			err = parseError{OrigError: fmt.Sprintf("Incorrect Message Length, expected %d, got %d", bodyLength, length)}
+		}
+		return
+	}
+
 	// Start parsing.
 	mp.fieldIndex++
 	xmlDataLen := 0
@@ -580,6 +659,17 @@ func (m *Message) String() string {
 	}
 
 	return string(m.build())
+}
+
+// RawBody returns the raw bytes of the message body as received on the wire.
+// Populated for inbound messages; nil for outbound messages or messages with no body.
+// For 35=W messages parsed with the fast path, Body.FieldMap is empty — use RawBody() instead.
+//
+// The returned slice aliases the message's internal buffer and must not be modified by the caller.
+// If the slice must be retained beyond the next call to ParseMessage on the same Message instance,
+// the caller must copy it.
+func (m *Message) RawBody() []byte {
+	return m.bodyBytes
 }
 
 func formatCheckSum(value int) string {

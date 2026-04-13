@@ -230,7 +230,9 @@ func TestRepeatingGroup_ReadRecursive(t *testing.T) {
 
 func TestRepeatingGroup_ReadComplete(t *testing.T) {
 
-	rawMsg := bytes.NewBufferString("8=FIXT.1.19=26835=W34=711849=TEST52=20151027-18:41:52.69856=TST22=9948=TSTX15262=7268=4269=4270=0.07499272=20151027273=18:41:52.698269=7270=0.07501272=20151027273=18:41:52.698269=8270=0.07494272=20151027273=18:41:52.698269=B271=60272=20151027273=18:41:52.69810=163")
+	// Uses 35=X (MarketDataIncrementalRefresh) rather than 35=W because the doParsing
+	// fast path skips Body.FieldMap for 35=W — Body.GetGroup() would find nothing.
+	rawMsg := bytes.NewBufferString("8=FIXT.1.19=26835=X34=711849=TEST52=20151027-18:41:52.69856=TST22=9948=TSTX15262=7268=4269=4270=0.07499272=20151027273=18:41:52.698269=7270=0.07501272=20151027273=18:41:52.698269=8270=0.07494272=20151027273=18:41:52.698269=B271=60272=20151027273=18:41:52.69810=095")
 
 	msg := NewMessage()
 	err := ParseMessage(msg, rawMsg)
