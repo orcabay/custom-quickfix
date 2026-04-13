@@ -233,24 +233,6 @@ func doParsing(mp *msgParser) (err error) {
 	// Access body fields via msg.RawBody().
 	// Note: messages with XMLData (tag 213) bodies are not supported by this fast path.
 	if string(mp.parsedFieldBytes.value) == "W" {
-		{
-			raw := mp.rawBytes
-			//seq, sendingTime := []byte("?"), []byte("?")
-			if i := bytes.Index(raw, []byte("\x0134=")); i >= 0 {
-				end := i + 4
-				for end < len(raw) && raw[end] != '\x01' {
-					end++
-				}
-				//seq = raw[i+4 : end]
-			}
-			if i := bytes.Index(raw, []byte("\x0152=")); i >= 0 {
-				end := i + 4
-				for end < len(raw) && raw[end] != '\x01' {
-					end++
-				}
-				//sendingTime = raw[i+4 : end]
-			}
-		}
 		mp.fieldIndex++
 		mp.trailerBytes = []byte{}
 		mp.foundBody = false
