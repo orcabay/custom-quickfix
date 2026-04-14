@@ -23,7 +23,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/orcabay/custom-quickfix"
+	"github.com/quickfixgo/quickfix"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )

@@ -22,7 +22,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/orcabay/custom-quickfix/datadictionary"
+	"github.com/quickfixgo/quickfix/datadictionary"
 )
 
 func BenchmarkParseMessage(b *testing.B) {

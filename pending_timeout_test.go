@@ -20,7 +20,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/orcabay/custom-quickfix/internal"
+	"github.com/quickfixgo/quickfix/internal"
 )
 
 type PendingTimeoutTestSuite struct {

@@ -20,7 +20,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/orcabay/custom-quickfix/config"
+	"github.com/quickfixgo/quickfix/config"
 )
 
 func TestSessionSettings_StringSettings(t *testing.T) {

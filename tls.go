@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/orcabay/custom-quickfix/config"
+	"github.com/quickfixgo/quickfix/config"
 )
 
 func loadTLSConfig(settings *SessionSettings) (*tls.Config, error) {
