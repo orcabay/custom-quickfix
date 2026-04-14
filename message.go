@@ -21,7 +21,7 @@ import (
 	"math"
 	"time"
 
-	"github.com/orcabay/custom-quickfix/datadictionary"
+	"github.com/quickfixgo/quickfix/datadictionary"
 )
 
 // Header is first section of a FIX Message.

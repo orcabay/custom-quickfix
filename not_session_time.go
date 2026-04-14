@@ -15,7 +15,7 @@
 
 package quickfix
 
-import "github.com/orcabay/custom-quickfix/internal"
+import "github.com/quickfixgo/quickfix/internal"
 
 type notSessionTime struct{ latentState }
 

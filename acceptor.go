@@ -27,7 +27,7 @@ import (
 
 	proxyproto "github.com/pires/go-proxyproto"
 
-	"github.com/orcabay/custom-quickfix/config"
+	"github.com/quickfixgo/quickfix/config"
 )
 
 // Acceptor accepts connections from FIX clients and manages the associated sessions.

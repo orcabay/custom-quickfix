@@ -1,4 +1,4 @@
-module github.com/orcabay/custom-quickfix
+module github.com/quickfixgo/quickfix
 
 go 1.23
 

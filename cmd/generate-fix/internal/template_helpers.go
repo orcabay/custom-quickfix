@@ -3,7 +3,7 @@ package internal
 import (
 	"fmt"
 
-	"github.com/orcabay/custom-quickfix/datadictionary"
+	"github.com/quickfixgo/quickfix/datadictionary"
 )
 
 func isDecimalType(quickfixType string) bool {

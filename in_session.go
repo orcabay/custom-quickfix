@@ -19,7 +19,7 @@ import (
 	"bytes"
 	"time"
 
-	"github.com/orcabay/custom-quickfix/internal"
+	"github.com/quickfixgo/quickfix/internal"
 )
 
 type inSession struct{ loggedOn }

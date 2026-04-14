@@ -22,7 +22,7 @@ import (
 
 	"golang.org/x/net/proxy"
 
-	"github.com/orcabay/custom-quickfix/config"
+	"github.com/quickfixgo/quickfix/config"
 )
 
 func loadDialerConfig(settings *SessionSettings) (dialer proxy.ContextDialer, err error) {

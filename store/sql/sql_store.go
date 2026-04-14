@@ -23,8 +23,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/orcabay/custom-quickfix"
-	"github.com/orcabay/custom-quickfix/config"
+	"github.com/quickfixgo/quickfix"
+	"github.com/quickfixgo/quickfix/config"
 )
 
 const (

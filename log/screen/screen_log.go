@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/orcabay/custom-quickfix"
+	"github.com/quickfixgo/quickfix"
 )
 
 type screenLog struct {

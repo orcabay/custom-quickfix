@@ -22,8 +22,8 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/orcabay/custom-quickfix"
-	"github.com/orcabay/custom-quickfix/config"
+	"github.com/quickfixgo/quickfix"
+	"github.com/quickfixgo/quickfix/config"
 )
 
 type sqlLogFactory struct {

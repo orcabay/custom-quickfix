@@ -20,7 +20,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/orcabay/custom-quickfix"
+	"github.com/quickfixgo/quickfix"
 )
 
 func sessionIDFilenamePrefix(s quickfix.SessionID) string {

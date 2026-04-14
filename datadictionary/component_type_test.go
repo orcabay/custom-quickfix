@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/orcabay/custom-quickfix/datadictionary"
+	"github.com/quickfixgo/quickfix/datadictionary"
 )
 
 func TestNewComponentType(t *testing.T) {
