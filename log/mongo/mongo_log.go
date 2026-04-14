@@ -26,8 +26,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
-	"github.com/quickfixgo/quickfix"
-	"github.com/quickfixgo/quickfix/config"
+	"github.com/orcabay/custom-quickfix"
+	"github.com/orcabay/custom-quickfix/config"
 )
 
 type mongoLogFactory struct {

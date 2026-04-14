@@ -22,7 +22,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/quickfixgo/quickfix/config"
+	"github.com/orcabay/custom-quickfix/config"
 )
 
 type DialerTestSuite struct {
